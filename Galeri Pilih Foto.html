@@ -1,0 +1,581 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Galeri Pilih Foto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: sticky header, hero + filter row, 4:5 photo grid, fixed action bar for the client; photographer gets a two-column dashboard. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --surface: #151517;
+  --surface-2: #1e1e21;
+  --line: #2b2b30;
+  --fg: #ededee;
+  --muted: #9b9ba2;
+  --pastel: #c6c8cf;
+  --accent: #b7d3c0;
+  --on-accent: #0b0b0c;
+  --warn: #e4c79b;
+  --danger: #e3a5a5;
+  --shadow: rgba(0, 0, 0, .6);
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #e6e7eb; --surface: #f4f4f6; --surface-2: #d9dae0; --line: #c3c5cd;
+    --fg: #111113; --muted: #585a62; --pastel: #2a2b30; --accent: #4f7e63;
+    --on-accent: #ffffff; --warn: #8a5f21; --danger: #9c4444; --shadow: rgba(30, 30, 40, .35);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e6e7eb; --surface: #f4f4f6; --surface-2: #d9dae0; --line: #c3c5cd;
+  --fg: #111113; --muted: #585a62; --pastel: #2a2b30; --accent: #4f7e63;
+  --on-accent: #ffffff; --warn: #8a5f21; --danger: #9c4444; --shadow: rgba(30, 30, 40, .35);
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 110px;
+}
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 1180px; margin: 0 auto; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+
+/* header */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 30; }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)); }
+.top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 17px; min-width: 0; flex: 1 1 auto; }
+.brand i { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--pastel), var(--accent)); flex: none; }
+.brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.tab { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; color: var(--muted); font-weight: 500; transition: background .25s, color .25s; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+.role { font-size: 12px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+
+/* buttons */
+.btn { position: relative; overflow: hidden; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); padding: 10px 18px; border-radius: 12px; font-weight: 500; transition: transform .25s cubic-bezier(.2, .8, .2, 1), background .25s, border-color .25s, box-shadow .25s; }
+.btn::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .26) 50%, transparent 70%); transform: translateX(-130%); transition: transform .75s; }
+.btn:hover { transform: translateY(-2px); border-color: var(--pastel); box-shadow: 0 10px 24px -12px var(--shadow); }
+.btn:hover::after { transform: translateX(130%); }
+.btn:active { transform: translateY(0) scale(.97); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 600; }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 6px 12px; font-size: 13px; border-radius: 10px; }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.btn.ready { animation: ring 2.4s infinite; }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 14px transparent; } }
+
+/* hero */
+.hero { padding: 36px 0 18px; display: grid; gap: 18px; grid-template-columns: 1fr auto; align-items: end; }
+.hero h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.05; margin-top: 8px; }
+.hero p { margin: 10px 0 0; max-width: 56ch; color: var(--muted); }
+.who { display: grid; gap: 6px; min-width: min(260px, 100%); }
+.who label { font-size: 12px; color: var(--muted); }
+.field { width: 100%; background: var(--surface); border: 1px solid var(--line); color: var(--fg); border-radius: 12px; padding: 10px 12px; font: inherit; transition: border-color .2s; }
+.field:focus { border-color: var(--accent); outline: none; }
+.prog { grid-column: 1 / -1; display: grid; gap: 8px; }
+.prog .row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar b { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--pastel), var(--accent)); border-radius: 99px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
+
+.notice { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 12px; padding: 10px 14px; margin-top: 14px; font-size: 14px; }
+.notice.ok { border-left-color: var(--accent); }
+
+.filters { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0 6px; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; color: var(--muted); font-size: 13px; transition: all .25s; }
+.chip:hover { border-color: var(--pastel); color: var(--fg); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* grid + cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 16px; padding: 14px 0 20px; }
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s, border-color .3s; }
+.card:hover { transform: translateY(-6px) rotate(-.4deg); box-shadow: 0 22px 40px -20px var(--shadow); border-color: var(--pastel); }
+.thumb { all: unset; display: block; position: relative; width: 100%; cursor: zoom-in; overflow: hidden; }
+.thumb img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: var(--surface-2); transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+.card:hover .thumb img { transform: scale(1.06); }
+.zoom { position: absolute; left: 10px; bottom: 10px; font-size: 12px; padding: 4px 10px; border-radius: 99px; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(6px); opacity: 0; transform: translateY(8px); transition: all .3s; }
+.card:hover .zoom, .thumb:focus-visible .zoom { opacity: 1; transform: none; }
+.cap { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; font-size: 13px; }
+.fn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.pick { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--pastel); background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(6px); display: grid; place-items: center; transition: transform .25s, background .25s, border-color .25s; }
+.pick svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 26; stroke-dashoffset: 26; transition: stroke-dashoffset .35s .05s; color: var(--on-accent); }
+.pick:hover { transform: scale(1.1); }
+.card.picked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card.picked .pick { background: var(--accent); border-color: var(--accent); }
+.card.picked .pick svg { stroke-dashoffset: 0; }
+.card.pop .pick { animation: pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pop { 0% { transform: scale(.7); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.tag { position: absolute; top: 10px; left: 10px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--accent); color: var(--on-accent); }
+.del { border: 0; background: transparent; color: var(--muted); font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+.del:hover, .del.sure { color: var(--danger); }
+
+.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 48px 20px; text-align: center; color: var(--muted); margin: 18px 0; }
+.empty h3 { color: var(--fg); margin-bottom: 6px; font-size: 20px; }
+
+/* action bar (client) */
+.actionbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.actionbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.count { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.count small { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+
+/* dashboard */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 22px 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; transition: transform .3s, border-color .3s; }
+.tile:hover { transform: translateY(-3px); border-color: var(--pastel); }
+.tile .v { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.1; margin-top: 6px; }
+.tile .v small { font-size: 15px; color: var(--muted); font-weight: 400; }
+.pill { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 13px; font-weight: 600; font-family: var(--font-body); }
+.pill.done { background: var(--accent); color: var(--on-accent); }
+.pill.wait { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+.cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.panel h2 { font-size: 18px; }
+.clients { display: flex; gap: 8px; flex-wrap: wrap; }
+.tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.tl li { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.tl li:last-child { border: 0; }
+.tl i { width: 8px; height: 8px; border-radius: 50%; background: var(--pastel); }
+.tl li.k-pick i { background: var(--accent); }
+.tl li.k-submit i { background: var(--warn); }
+.tl time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.stack { display: grid; gap: 10px; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.folder { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.folder b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.mini figure { margin: 0; min-width: 0; }
+.mini img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 10px; display: block; background: var(--surface-2); transition: transform .3s; }
+.mini figure:hover img { transform: translateY(-3px); }
+.mini figcaption { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; }
+
+/* lightbox */
+.lb { position: fixed; inset: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(8px); display: grid; grid-template-rows: 1fr auto; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); animation: fade .25s; }
+@keyframes fade { from { opacity: 0; } }
+.lb-img { min-height: 0; display: grid; place-items: center; }
+.lb-img img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 30px 60px -30px var(--shadow); }
+.lb-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 99px; font-size: 14px; opacity: 0; pointer-events: none; transition: all .35s; z-index: 50; max-width: calc(100% - 32px); text-align: center; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  .cols { grid-template-columns: 1fr; }
+  .grid { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div id="hdr"></div>
+<main id="main" class="wrap"></main>
+<div id="bar"></div>
+<div id="lb"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>';
+
+  const S = {
+    db: null, user: null, assets: null, dl: null, uid: null, isPhotog: false, preview: false,
+    view: "gallery", filter: "all", photos: [], picks: {}, config: {}, active: null,
+    mine: { name: "", ids: [], status: "draft", events: [] }, dirty: false, saveErr: false,
+    lb: null, confirmDel: null, pop: null, busy: "", dir: null, dirName: "", dbState: "loading", pending: false
+  };
+
+  /* ---------- contoh foto (ditandai "Contoh" sampai fotografer mengunggah) ---------- */
+  const TONES = [["#2b2d33", "#8c93a1", "#d6d9e0"], ["#1c2420", "#6f8f7c", "#cfe0d4"], ["#2c2722", "#a38a66", "#e8d9bd"], ["#26262a", "#74757d", "#c9cad0"], ["#1f2229", "#5f7388", "#c3d0dd"], ["#2a2326", "#9a7480", "#e3ccd2"]];
+  function demoImg(i) {
+    const t = TONES[i % TONES.length], v = i % 4;
+    let shape = "";
+    if (v === 0) shape = '<circle cx="280" cy="170" r="62" fill="' + t[2] + '" opacity=".85"/><path d="M0 360 L130 250 L250 340 L340 270 L400 330 V500 H0Z" fill="' + t[0] + '" opacity=".75"/>';
+    if (v === 1) shape = '<rect x="90" y="120" width="220" height="300" rx="110" fill="' + t[2] + '" opacity=".7"/><rect x="0" y="400" width="400" height="100" fill="' + t[0] + '" opacity=".8"/>';
+    if (v === 2) shape = '<path d="M0 300 Q100 220 200 300 T400 300 V500 H0Z" fill="' + t[0] + '" opacity=".7"/><circle cx="120" cy="140" r="40" fill="' + t[2] + '" opacity=".9"/>';
+    if (v === 3) shape = '<rect x="60" y="80" width="130" height="340" fill="' + t[1] + '" opacity=".6"/><rect x="210" y="160" width="130" height="260" fill="' + t[2] + '" opacity=".55"/>';
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + t[1] + '"/><stop offset="1" stop-color="' + t[0] + '"/></linearGradient></defs><rect width="400" height="500" fill="url(#g)"/>' + shape + "</svg>";
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+  const DEMO = Array.from({ length: 12 }, (_, i) => ({ id: "demo-" + (i + 1), name: "IMG_" + (2041 + i * 7) + ".jpg", url: demoImg(i), demo: true }));
+  const photos = () => (S.photos.length ? S.photos : DEMO);
+  const isDemo = () => !S.photos.length;
+
+  /* ---------- helpers ---------- */
+  const title = () => S.config.title || "Galeri Foto";
+  const canWrite = () => !!(S.db && S.uid && !S.preview && !S.isPhotog);
+  const clientMode = () => !S.isPhotog || S.preview;
+  function ago(t) {
+    if (!t) return "belum ada aktivitas";
+    const s = (Date.now() - t) / 1000;
+    if (s < 45) return "baru saja";
+    if (s < 3600) return Math.round(s / 60) + " menit lalu";
+    if (s < 86400) return Math.round(s / 3600) + " jam lalu";
+    return Math.round(s / 86400) + " hari lalu";
+  }
+  let toastT = null;
+  function toast(msg) {
+    const el = $("#toast"); el.textContent = msg; el.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 3200);
+  }
+  const nameOf = (id) => { const p = photos().find((x) => x.id === id); return p ? p.name : "sebuah foto"; };
+  const clientsList = () => Object.keys(S.picks).map((k) => Object.assign({ uid: k }, S.picks[k])).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  function activePick() {
+    const l = clientsList();
+    if (!l.length) return null;
+    return l.find((c) => c.uid === S.active) || l[0];
+  }
+  const validIds = (ids) => { const have = new Set(photos().map((p) => p.id)); return (ids || []).filter((i) => have.has(i)); };
+
+  /* ---------- state changes (klien) ---------- */
+  let wt = null, writing = false;
+  function mutate(fn) {
+    const m = JSON.parse(JSON.stringify(S.mine));
+    fn(m); m.updatedAt = Date.now(); m.uid = S.uid || "local";
+    m.events = (m.events || []).slice(0, 40);
+    S.mine = m; S.dirty = true; render();
+    if (canWrite()) { clearTimeout(wt); wt = setTimeout(flush, 500); }
+  }
+  const ev = (m, k, p) => { m.events = [{ t: Date.now(), k: k, p: p || "" }].concat(m.events || []); };
+  async function flush() {
+    if (writing) { wt = setTimeout(flush, 300); return; }
+    writing = true; const snap = S.mine;
+    try {
+      await S.db.doc("picks/" + S.uid).set(snap);
+      if (S.mine === snap) S.dirty = false;
+      if (S.saveErr) { S.saveErr = false; render(); }
+    } catch (e) { S.saveErr = true; render(); }
+    writing = false;
+  }
+  function toggle(id) {
+    if (!clientMode()) return;
+    if (S.mine.status === "submitted") { toast('Pilihan sudah terkirim. Tekan "Ubah pilihan" untuk melanjutkan.'); return; }
+    S.pop = id; setTimeout(() => { S.pop = null; }, 500);
+    mutate((m) => {
+      const i = m.ids.indexOf(id);
+      if (i > -1) { m.ids.splice(i, 1); ev(m, "unpick", id); } else { m.ids.push(id); ev(m, "pick", id); }
+    });
+  }
+  function submit() {
+    const n = validIds(S.mine.ids).length;
+    if (!n) { toast("Pilih minimal satu foto dulu."); return; }
+    mutate((m) => { m.ids = validIds(m.ids); m.status = "submitted"; m.submittedAt = Date.now(); ev(m, "submit", String(n)); });
+    toast(S.preview ? "Pratinjau: pilihan tidak dikirim ke fotografer." : "Pilihan terkirim ke fotografer.");
+  }
+  function reopen() { mutate((m) => { m.status = "draft"; ev(m, "reopen"); }); }
+
+  /* ---------- render ---------- */
+  function header() {
+    const tabs = S.isPhotog && !S.preview
+      ? '<div class="tabs" role="tablist"><button class="tab" role="tab" data-a="tab" data-v="gallery" aria-selected="' + (S.view === "gallery") + '">Galeri</button><button class="tab" role="tab" data-a="tab" data-v="dash" aria-selected="' + (S.view === "dash") + '">Dasbor</button></div>'
+      : "";
+    const role = S.isPhotog ? (S.preview ? "Pratinjau klien" : "Fotografer") : "Klien";
+    return '<div class="top"><div class="wrap"><div class="brand"><i></i><span>' + esc(title()) + "</span></div>" + tabs + '<span class="role">' + role + "</span></div></div>";
+  }
+
+  function note() {
+    let h = "";
+    if (S.dbState === "slow") h += '<div class="notice"><span>Belum bisa terhubung ke penyimpanan bersama. Data di layar mungkin belum yang terbaru.</span></div>';
+    if (S.saveErr) h += '<div class="notice"><span>Pilihan terakhir belum tersimpan. Periksa koneksi, lalu pilih ulang satu foto untuk mencoba lagi.</span></div>';
+    return h;
+  }
+
+  function card(p, picked, admin) {
+    const del = admin && !p.demo
+      ? '<button class="del' + (S.confirmDel === p.id ? " sure" : "") + '" data-a="del" data-id="' + esc(p.id) + '">' + (S.confirmDel === p.id ? "Yakin hapus?" : "Hapus") + "</button>"
+      : "";
+    const mark = admin
+      ? (picked ? '<span class="tag">Dipilih klien</span>' : "")
+      : '<button class="pick" data-a="toggle" data-id="' + esc(p.id) + '" aria-pressed="' + picked + '" aria-label="' + (picked ? "Batalkan pilihan " : "Pilih ") + esc(p.name) + '">' + CHECK + "</button>";
+    return '<article class="card' + (picked ? " picked" : "") + (S.pop === p.id ? " pop" : "") + '">' +
+      '<button class="thumb" data-a="open" data-id="' + esc(p.id) + '" aria-label="Perbesar ' + esc(p.name) + '"><img src="' + esc(p.url) + '" alt="' + esc(p.name) + '" loading="lazy"><span class="zoom">Perbesar</span></button>' +
+      mark + '<div class="cap"><span class="fn">' + esc(p.name) + "</span>" + del + "</div></article>";
+  }
+
+  function visible() {
+    const all = photos();
+    const ids = new Set(S.lbIds || []);
+    const set = clientMode() ? new Set(S.mine.ids) : new Set(validIds((activePick() || {}).ids));
+    S.setNow = set;
+    if (S.filter === "picked") return all.filter((p) => set.has(p.id));
+    if (S.filter === "left") return all.filter((p) => !set.has(p.id));
+    return all;
+  }
+
+  function gallery() {
+    const cm = clientMode();
+    const all = photos();
+    const list = visible(), set = S.setNow;
+    const total = all.length, n = all.filter((p) => set.has(p.id)).length;
+    const pct = total ? Math.round((n / total) * 100) : 0;
+    const submitted = S.mine.status === "submitted";
+    let h = note();
+    if (S.preview) h += '<div class="notice"><span>Anda sedang melihat tampilan klien. Pilihan di mode ini tidak disimpan.</span><button class="btn small" data-a="preview">Kembali ke tampilan fotografer</button></div>';
+    if (isDemo()) h += '<div class="notice"><span>' + (S.isPhotog ? "Ini foto contoh. Unggah foto Anda untuk mengganti galeri ini." : "Ini tampilan contoh. Fotografer belum menambahkan foto.") + "</span></div>";
+    if (cm && submitted) h += '<div class="notice ok"><span>Pilihan Anda sudah terkirim ' + esc(ago(S.mine.submittedAt)) + ". Fotografer akan mulai menyunting foto yang Anda pilih.</span></div>";
+
+    const hero = cm
+      ? '<section class="hero"><div><div class="eyebrow">Pilih foto untuk disunting</div><h1>' + esc(title()) + "</h1><p>Ketuk centang di pojok foto yang ingin disunting fotografer. Anda bisa mengubah pilihan kapan saja sebelum menekan Kirim.</p></div>" +
+        '<div class="who"><label for="nm">Nama Anda</label><input class="field" id="nm" type="text" data-nm="1" value="' + esc(S.mine.name) + '" placeholder="Contoh: Rina & Dimas" maxlength="60" autocomplete="name"></div>' +
+        '<div class="prog"><div class="row"><span class="num">' + n + " dari " + total + ' foto dipilih</span><span class="num">' + pct + '%</span></div><div class="bar"><b style="width:' + pct + '%"></b></div></div></section>'
+      : '<section class="hero"><div><div class="eyebrow">Kelola galeri</div><h1>' + esc(title()) + "</h1><p>" + (activePick() ? "Foto yang diberi tanda dipilih oleh " + esc(activePick().name || "klien") + "." : "Belum ada klien yang memilih. Bagikan tautan ini dengan akses Kontributor.") + "</p></div>" +
+        '<div class="btns"><label class="btn primary" for="up">Tambah foto<input id="up" type="file" accept="image/*" multiple hidden></label><button class="btn ghost" data-a="preview">Lihat sebagai klien</button></div>' +
+        (S.busy ? '<div class="prog"><div class="row"><span>' + esc(S.busy) + "</span></div></div>" : "") + "</section>";
+
+    const filters = '<div class="filters" role="group" aria-label="Saring foto">' +
+      [["all", "Semua", total], ["picked", "Dipilih", n], ["left", "Belum dipilih", total - n]].map((f) => '<button class="chip num" data-a="filter" data-v="' + f[0] + '" aria-pressed="' + (S.filter === f[0]) + '">' + f[1] + " " + f[2] + "</button>").join("") + "</div>";
+
+    const grid = list.length
+      ? '<div class="grid">' + list.map((p) => card(p, set.has(p.id), !cm)).join("") + "</div>"
+      : '<div class="empty"><h3>' + (S.filter === "picked" ? "Belum ada foto dipilih" : "Semua foto sudah dipilih") + "</h3><p>" + (S.filter === "picked" ? "Ketuk centang pada foto untuk memilihnya." : "Tidak ada foto yang tersisa di daftar ini.") + "</p></div>";
+    return h + hero + filters + grid;
+  }
+
+  function dash() {
+    const c = activePick(), total = photos().length;
+    const ids = c ? validIds(c.ids) : [];
+    const list = clientsList();
+    let h = note();
+    if (isDemo()) h += '<div class="notice"><span>Galeri masih memakai foto contoh. Unggah foto di tab Galeri.</span></div>';
+    h += '<section class="hero" style="grid-template-columns:1fr"><div><div class="eyebrow">Pantau klien</div><h1>Dasbor pilihan</h1><p>Lihat siapa yang sudah memilih, berapa foto yang masuk, dan simpan daftarnya ke folder kerja Anda.</p></div></section>';
+    h += '<div class="tiles">' +
+      '<div class="tile"><div class="eyebrow">Foto dipilih</div><div class="v num">' + ids.length + " <small>/ " + total + "</small></div></div>" +
+      '<div class="tile"><div class="eyebrow">Status</div><div class="v">' + (c ? (c.status === "submitted" ? '<span class="pill done">Terkirim</span>' : '<span class="pill wait">Masih memilih</span>') : '<span class="pill wait">Belum mulai</span>') + "</div></div>" +
+      '<div class="tile"><div class="eyebrow">Terakhir aktif</div><div class="v" style="font-size:20px;padding-top:6px">' + esc(c ? ago(c.updatedAt) : "belum ada") + "</div></div>" +
+      '<div class="tile"><div class="eyebrow">Klien terdaftar</div><div class="v num">' + list.length + "</div></div></div>";
+
+    const chips = list.length > 1 ? '<div class="clients">' + list.map((x) => '<button class="chip" data-a="client" data-id="' + esc(x.uid) + '" aria-pressed="' + (c && c.uid === x.uid) + '">' + esc(x.name || "Klien tanpa nama") + "</button>").join("") + "</div>" : "";
+
+    const events = [];
+    list.forEach((cl) => (cl.events || []).forEach((e) => events.push({ e: e, who: cl.name || "Klien" })));
+    events.sort((a, b) => b.e.t - a.e.t);
+    const L = { pick: "memilih", unpick: "membatalkan", submit: "mengirim pilihan", reopen: "membuka kembali pilihan" };
+    const tl = events.length
+      ? '<ul class="tl">' + events.slice(0, 12).map((x) => {
+          const k = x.e.k;
+          const what = k === "submit" ? " (" + esc(x.e.p) + " foto)" : (k === "pick" || k === "unpick") ? " " + esc(nameOf(x.e.p)) : "";
+          return '<li class="k-' + esc(k) + '"><i></i><span><b>' + esc(x.who) + "</b> " + (L[k] || "aktivitas") + what + '</span><time>' + esc(ago(x.e.t)) + "</time></li>";
+        }).join("") + "</ul>"
+      : '<div class="empty" style="margin:0;padding:28px 16px"><h3>Belum ada aktivitas</h3><p>Aktivitas muncul saat klien mulai memilih foto.</p></div>';
+
+    const hasDir = typeof window.showDirectoryPicker === "function";
+    const picked = photos().filter((p) => ids.indexOf(p.id) > -1);
+    const folderLabel = S.config.folderLabel || "Pilihan-Klien";
+    h += '<div class="cols"><div class="stack">' +
+      '<section class="panel"><h2>Aktivitas klien</h2>' + chips + tl + "</section>" +
+      '<section class="panel"><h2>Foto terpilih' + (c ? " · " + esc(c.name || "Klien") : "") + "</h2>" +
+      (picked.length ? '<div class="mini">' + picked.map((p) => '<figure><img src="' + esc(p.url) + '" alt="' + esc(p.name) + '"><figcaption>' + esc(p.name) + "</figcaption></figure>").join("") + "</div>" +
+        '<div class="btns"><button class="btn small" data-a="copy">Salin nama file</button></div>' : '<p class="muted" style="margin:0">Belum ada foto yang dipilih.</p>') + "</section></div>" +
+      '<div class="stack"><section class="panel"><h2>Simpan ke folder</h2>' +
+      '<div class="folder"><span class="muted">Folder:</span><b>' + esc(S.dirName || "belum dipilih") + "</b></div>" +
+      '<div class="btns"><button class="btn" data-a="pickdir"' + (hasDir ? "" : " disabled") + '>Pilih folder</button><button class="btn primary' + (picked.length ? " ready" : "") + '" data-a="save"' + (picked.length ? "" : " disabled") + ">Simpan pilihan</button></div>" +
+      '<div class="btns"><button class="btn small ghost" data-a="dlcsv"' + (picked.length ? "" : " disabled") + '>Unduh .csv</button><button class="btn small ghost" data-a="dltxt"' + (picked.length ? "" : " disabled") + ">Unduh .txt</button></div>" +
+      '<p class="muted" style="margin:0;font-size:13px">' + (hasDir ? "Daftar dan salinan foto ditulis ke subfolder bernama " + esc(folderLabel) + ". Bila folder tidak bisa ditulis, daftar diunduh sebagai file." : "Browser ini tidak mengizinkan memilih folder. Gunakan tombol unduh untuk menyimpan daftar.") + "</p></section>" +
+      '<section class="panel"><h2>Pengaturan galeri</h2><div class="stack">' +
+      '<div><label class="muted" for="cfg-t" style="font-size:12px">Judul galeri</label><input class="field" id="cfg-t" type="text" data-cfg="title" value="' + esc(S.config.title || "") + '" placeholder="Contoh: Pernikahan Rina & Dimas" maxlength="80"></div>' +
+      '<div><label class="muted" for="cfg-f" style="font-size:12px">Nama subfolder tujuan</label><input class="field" id="cfg-f" type="text" data-cfg="folderLabel" value="' + esc(S.config.folderLabel || "") + '" placeholder="Pilihan-Klien" maxlength="60"></div></div></section></div></div>';
+    return h;
+  }
+
+  function bar() {
+    if (!clientMode()) return "";
+    const set = new Set(S.mine.ids), n = photos().filter((p) => set.has(p.id)).length, total = photos().length;
+    const sub = S.mine.status === "submitted";
+    return '<div class="actionbar"><div class="wrap"><div class="count num">' + n + "<small>dari " + total + " foto dipilih</small></div>" +
+      (sub ? '<button class="btn" data-a="reopen">Ubah pilihan</button>' : '<button class="btn primary' + (n ? " ready" : "") + '" data-a="submit"' + (n ? "" : " disabled") + ">Kirim pilihan ke fotografer</button>") + "</div></div>";
+  }
+
+  function lightbox() {
+    if (!S.lb) return "";
+    const list = visible(), i = list.findIndex((p) => p.id === S.lb);
+    if (i < 0) return "";
+    const p = list[i], picked = S.setNow.has(p.id), cm = clientMode();
+    return '<div class="lb" data-a="lbbg" role="dialog" aria-modal="true" aria-label="' + esc(p.name) + '"><div class="lb-img"><img src="' + esc(p.url) + '" alt="' + esc(p.name) + '"></div>' +
+      '<div class="lb-bar"><div><b>' + esc(p.name) + '</b> <span class="muted num">· ' + (i + 1) + " / " + list.length + '</span></div><div class="btns">' +
+      '<button class="btn small" data-a="prev">Sebelumnya</button><button class="btn small" data-a="next">Berikutnya</button>' +
+      (cm ? '<button class="btn small primary" data-a="toggle" data-id="' + esc(p.id) + '">' + (picked ? "Batalkan pilihan" : "Pilih foto ini") + "</button>" : "") +
+      '<button class="btn small ghost" data-a="close">Tutup</button></div></div></div>';
+  }
+
+  function render() {
+    const ae = document.activeElement;
+    if (ae && ae.matches && ae.matches('input[type="text"]')) { S.pending = true; return; }
+    S.pending = false;
+    $("#hdr").innerHTML = header();
+    $("#main").innerHTML = S.isPhotog && !S.preview && S.view === "dash" ? dash() : gallery();
+    $("#bar").innerHTML = bar();
+    $("#lb").innerHTML = lightbox();
+  }
+
+  /* ---------- aksi ---------- */
+  function step(d) {
+    const list = visible(), i = list.findIndex((p) => p.id === S.lb);
+    if (i < 0 || !list.length) return;
+    S.lb = list[(i + d + list.length) % list.length].id; render();
+  }
+  function listText(c, picked) {
+    return ["Daftar foto pilihan", "Galeri: " + title(), "Klien: " + (c.name || "-"), "Status: " + (c.status === "submitted" ? "Terkirim" : "Masih memilih"), "Jumlah: " + picked.length, ""].concat(picked.map((p) => p.name)).join("\n");
+  }
+  function listCsv(picked) {
+    return "No,Nama file\n" + picked.map((p, i) => (i + 1) + ',"' + p.name.replace(/"/g, '""') + '"').join("\n");
+  }
+  const slug = (s) => String(s || "").trim().replace(/[^\w\- ]+/g, "").replace(/\s+/g, "-").slice(0, 50) || "klien";
+  function selected() {
+    const c = activePick(); if (!c) return null;
+    const ids = validIds(c.ids); return { c: c, picked: photos().filter((p) => ids.indexOf(p.id) > -1) };
+  }
+  async function download(kind) {
+    const s = selected(); if (!s) return;
+    if (!S.dl) { toast("Unduhan tidak tersedia di tampilan ini."); return; }
+    try {
+      await S.dl.save({ filename: "pilihan-" + slug(s.c.name) + "." + kind, data: kind === "csv" ? listCsv(s.picked) : listText(s.c, s.picked) });
+      toast("Daftar siap disimpan.");
+    } catch (e) { if (!e || e.code !== "declined") toast("Daftar belum bisa diunduh di tampilan ini."); }
+  }
+  async function pickDir() {
+    try { S.dir = await window.showDirectoryPicker({ mode: "readwrite" }); S.dirName = S.dir.name; render(); }
+    catch (e) { if (!e || e.name !== "AbortError") toast("Folder tidak bisa dibuka di sini. Gunakan tombol unduh."); }
+  }
+  async function saveFolder() {
+    const s = selected(); if (!s) return;
+    if (!S.dir) { await pickDir(); if (!S.dir) return; }
+    try {
+      const sub = await S.dir.getDirectoryHandle(slug(S.config.folderLabel || "Pilihan-Klien") + "-" + slug(s.c.name), { create: true });
+      const put = async (name, data) => { const f = await sub.getFileHandle(name, { create: true }); const w = await f.createWritable(); await w.write(data); await w.close(); };
+      await put("daftar-foto-pilihan.txt", listText(s.c, s.picked));
+      await put("daftar-foto-pilihan.csv", listCsv(s.picked));
+      let copied = 0;
+      for (const p of s.picked) {
+        if (p.demo) continue;
+        try { const r = await fetch(p.url); if (r.ok) { await put(p.name, await r.blob()); copied++; } } catch (e) { /* lanjut ke foto berikutnya */ }
+      }
+      toast("Tersimpan di folder " + S.dirName + (copied ? " (" + copied + " foto disalin)." : " (daftar saja)."));
+    } catch (e) { toast("Folder tidak bisa ditulis. Daftar diunduh sebagai file."); download("csv"); }
+  }
+  async function copyNames() {
+    const s = selected(); if (!s) return;
+    const txt = s.picked.map((p) => p.name).join("\n");
+    try { await navigator.clipboard.writeText(txt); toast("Nama file disalin."); }
+    catch (e) { toast("Salin otomatis ditolak. Gunakan tombol unduh."); }
+  }
+  async function shrink(f) {
+    try {
+      const bmp = await createImageBitmap(f), sc = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+      if (sc === 1 && f.size < 6e6) return f;
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      return await new Promise((r) => c.toBlob((b) => r(b || f), "image/jpeg", 0.88));
+    } catch (e) { return f; }
+  }
+  async function upload(files) {
+    if (!S.assets || !S.db) { toast("Unggah foto hanya tersedia untuk fotografer yang masuk."); return; }
+    const fails = []; let i = 0;
+    for (const f of files) {
+      i++; S.busy = "Mengunggah " + i + " dari " + files.length + ": " + f.name; render();
+      try {
+        const b = await shrink(f);
+        const r = await S.assets.upload(b, { type: b.type || "image/jpeg" });
+        await S.db.collection("photos").doc().set({ name: f.name, assetId: r.id, order: Date.now() + i, bytes: r.sizeBytes });
+      } catch (e) { fails.push(f.name); }
+    }
+    S.busy = ""; render();
+    toast(fails.length ? fails.length + " foto gagal diunggah (maks. 20 MB per foto, format gambar)." : "Semua foto terunggah.");
+  }
+  async function delPhoto(id) {
+    if (S.confirmDel !== id) { S.confirmDel = id; render(); setTimeout(() => { if (S.confirmDel === id) { S.confirmDel = null; render(); } }, 4000); return; }
+    S.confirmDel = null;
+    const p = S.photos.find((x) => x.id === id);
+    try { await S.db.doc("photos/" + id).delete(); if (p && S.assets) S.assets.delete(p.assetId).catch(() => {}); } catch (e) { toast("Foto belum bisa dihapus."); }
+  }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-a]"); if (!el) return;
+    const a = el.dataset.a, id = el.dataset.id;
+    if (a === "lbbg" && e.target !== el) return;
+    if (a === "tab") { S.view = el.dataset.v; render(); }
+    else if (a === "filter") { S.filter = el.dataset.v; render(); }
+    else if (a === "toggle") toggle(id);
+    else if (a === "open") { S.lb = id; render(); }
+    else if (a === "close" || a === "lbbg") { S.lb = null; render(); }
+    else if (a === "prev") step(-1);
+    else if (a === "next") step(1);
+    else if (a === "submit") submit();
+    else if (a === "reopen") reopen();
+    else if (a === "preview") { S.preview = !S.preview; S.view = "gallery"; if (S.preview) S.mine = { name: "", ids: [], status: "draft", events: [] }; render(); }
+    else if (a === "client") { S.active = id; render(); }
+    else if (a === "pickdir") pickDir();
+    else if (a === "save") saveFolder();
+    else if (a === "dlcsv") download("csv");
+    else if (a === "dltxt") download("txt");
+    else if (a === "copy") copyNames();
+    else if (a === "del") delPhoto(id);
+  });
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t.id === "up") { upload(Array.from(t.files || [])); t.value = ""; }
+    else if (t.dataset && t.dataset.nm) { const v = t.value.trim(); if (v !== S.mine.name) mutate((m) => { m.name = v; }); }
+    else if (t.dataset && t.dataset.cfg) {
+      S.config = Object.assign({}, S.config, { [t.dataset.cfg]: t.value.trim() });
+      if (S.db) S.db.doc("config/gallery").set(S.config).catch(() => toast("Pengaturan belum tersimpan."));
+      render();
+    }
+  });
+  document.addEventListener("focusout", () => { setTimeout(() => { if (S.pending) render(); }, 0); });
+  document.addEventListener("keydown", (e) => {
+    if (!S.lb) return;
+    if (e.key === "Escape") { S.lb = null; render(); }
+    else if (e.key === "ArrowRight") step(1);
+    else if (e.key === "ArrowLeft") step(-1);
+  });
+  setInterval(() => { if (S.view === "dash" || S.mine.status === "submitted") render(); }, 30000);
+
+  /* ---------- koneksi ---------- */
+  const use = (n) => (window.claude && window.claude.use ? window.claude.use(n) : Promise.resolve(null)).catch(() => null);
+  async function init() {
+    render();
+    const r = await Promise.all([use("db"), use("user"), use("assets"), use("downloads")]);
+    S.db = r[0]; S.user = r[1]; S.assets = r[2]; S.dl = r[3];
+    if (S.user) { try { S.isPhotog = !!(await S.user.canEdit()); S.uid = await S.user.id(); } catch (e) { /* tetap sebagai klien */ } }
+    render();
+    if (!S.db) { S.dbState = "off"; return; }
+    const timer = setTimeout(() => { if (S.dbState === "loading") { S.dbState = "slow"; render(); } }, 10000);
+    const ok = (snap) => { if (!snap.metadata.fromCache) { S.dbState = "ok"; clearTimeout(timer); } };
+    const bad = () => { S.dbState = "slow"; render(); };
+    S.db.collection("photos").orderBy("order").onSnapshot((snap) => {
+      S.photos = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, name: v.name || "foto", assetId: v.assetId, url: "/_blob/" + v.assetId }; });
+      ok(snap); render();
+    }, bad);
+    S.db.collection("picks").onSnapshot((snap) => {
+      S.picks = {};
+      snap.docs.forEach((d) => { S.picks[d.id] = d.data(); });
+      if (S.uid && S.picks[S.uid] && !S.dirty && !S.preview) {
+        const v = S.picks[S.uid];
+        S.mine = { name: v.name || "", ids: v.ids || [], status: v.status || "draft", events: v.events || [], submittedAt: v.submittedAt, updatedAt: v.updatedAt };
+      }
+      ok(snap); render();
+    }, bad);
+    S.db.doc("config/gallery").onSnapshot((snap) => { S.config = snap.exists ? (snap.data() || {}) : {}; ok(snap); render(); }, bad);
+  }
+  init();
+})();
+</script>
+
+</body></html>
